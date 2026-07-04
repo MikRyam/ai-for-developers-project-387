@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   Container,
@@ -13,11 +13,17 @@ import {
   Stack,
   TextInput,
   Alert,
+  Grid,
+  Badge,
+  Divider,
+  ScrollArea,
 } from '@mantine/core';
+import { Calendar } from '@mantine/dates';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useDisclosure } from '@mantine/hooks';
 import { skipToken } from '@reduxjs/toolkit/query/react';
+import dayjs from 'dayjs';
 import {
   useGetEventTypeQuery,
   useGetSlotsQuery,
@@ -28,6 +34,14 @@ import {
   type BookingFormValues,
 } from '@/schemas/bookingFormSchema';
 import { formatDateTime } from '@/utils/formatDateTime';
+
+function formatTime(iso: string): string {
+  return dayjs(iso).format('HH:mm');
+}
+
+function extractDate(iso: string): string {
+  return dayjs(iso).format('YYYY-MM-DD');
+}
 
 export function EventTypeBookingPage() {
   const { id } = useParams<{ id: string }>();
@@ -41,12 +55,61 @@ export function EventTypeBookingPage() {
     useCreateBookingMutation();
 
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [confirmedBooking, setConfirmedBooking] = useState<{
     startTime: string;
     endTime: string;
   } | null>(null);
   const [opened, { open, close }] = useDisclosure(false);
+
+  const timeZone = useMemo(
+    () => Intl.DateTimeFormat().resolvedOptions().timeZone,
+    [],
+  );
+
+  const today = useMemo(() => dayjs().format('YYYY-MM-DD'), []);
+  const maxDateStr = useMemo(
+    () => dayjs().add(13, 'day').format('YYYY-MM-DD'),
+    [],
+  );
+
+  const slotsByDate = useMemo(() => {
+    const map = new Map<string, typeof slots>();
+    slots?.forEach((slot) => {
+      const dateKey = extractDate(slot.startTime);
+      if (!map.has(dateKey)) {
+        map.set(dateKey, []);
+      }
+      map.get(dateKey)!.push(slot);
+    });
+    return map;
+  }, [slots]);
+
+  const firstAvailableDate = useMemo(() => {
+    const keys = [...slotsByDate.keys()].sort();
+    if (keys.length > 0) return keys[0];
+    return null;
+  }, [slotsByDate]);
+
+  const initialized = useRef(false);
+
+  useEffect(() => {
+    if (!initialized.current && firstAvailableDate) {
+      setSelectedDate(firstAvailableDate);
+      initialized.current = true;
+    }
+  }, [firstAvailableDate]);
+
+  useEffect(() => {
+    if (selectedDate && (slotsByDate.get(selectedDate) ?? []).length === 0 && firstAvailableDate) {
+      setSelectedDate(firstAvailableDate);
+    }
+  }, [selectedDate, slotsByDate, firstAvailableDate]);
+
+  const slotsForSelectedDate = selectedDate
+    ? slotsByDate.get(selectedDate) ?? []
+    : [];
 
   const {
     register,
@@ -105,93 +168,144 @@ export function EventTypeBookingPage() {
     }
   };
 
+  const handleDateChange = (date: string) => {
+    setSelectedDate(date);
+    setSelectedSlot(null);
+    setBookingError(null);
+  };
 
   return (
-    <Container>
-      <Title order={2}>{eventType.title}</Title>
-      <Text c="dimmed" mt="xs">
-        {eventType.description}
-      </Text>
-      <Text size="sm" mt="sm">
-        Duration: {eventType.durationMinutes} minutes
-      </Text>
+    <Container fluid>
+      <Grid maw={1400} mx="auto" gap="lg" align="flex-start">
+        <Grid.Col span={{ base: 12, md: 3 }}>
+          <Stack gap="md">
+            <Title order={2}>{eventType.title}</Title>
+            <Text c="dimmed">{eventType.description}</Text>
+            <Group>
+              <Badge variant="light" size="lg">
+                {eventType.durationMinutes} min
+              </Badge>
+            </Group>
+            <Text size="sm" c="dimmed">
+              Time zone: {timeZone}
+            </Text>
+          </Stack>
+        </Grid.Col>
 
-      <Title order={3} mt="xl" mb="md">
-        Available Slots
-      </Title>
+        <Grid.Col span={{ base: 12, md: 4 }}>
+          <Card withBorder padding="md">
+            <Calendar
+              fullWidth
+              hideOutsideDates
+              minDate={today}
+              maxDate={maxDateStr}
+              getDayProps={(date) => ({
+                disabled: !slotsByDate.has(date),
+                selected: date === selectedDate,
+                onClick: () => handleDateChange(date),
+              })}
+            />
+          </Card>
+        </Grid.Col>
 
-      {slots && slots.length === 0 && (
-        <Text c="dimmed">No available slots for the next 14 days.</Text>
-      )}
+        <Grid.Col span={{ base: 12, md: 5 }}>
+          <Card withBorder padding="md">
+            {!selectedDate ? (
+              <Text c="dimmed" ta="center">
+                Select a date to see available time slots
+              </Text>
+            ) : (
+              <>
+                <Title order={4} mb="md">
+                  {dayjs(selectedDate).format('dddd, MMMM D')}
+                </Title>
 
-      <Stack>
-        {slots?.map((slot) => {
-          const isSelected = selectedSlot === slot.startTime;
-          return (
-            <Card
-              key={slot.startTime}
-              withBorder
-              padding="sm"
-              style={{
-                cursor: 'pointer',
-                borderColor: isSelected
-                  ? 'var(--mantine-color-blue-filled)'
-                  : undefined,
-              }}
-              onClick={() => {
-                setSelectedSlot(slot.startTime);
-                setBookingError(null);
-              }}
-            >
-              <Group justify="space-between">
-                <div>
-                  <Text>{formatDateTime(slot.startTime)}</Text>
-                  <Text size="sm" c="dimmed">
-                    → {formatDateTime(slot.endTime)}
-                  </Text>
-                </div>
-                {isSelected && (
-                  <Button size="xs" variant="light" color="blue">
-                    Selected
-                  </Button>
+                {slotsForSelectedDate.length === 0 ? (
+                  <Text c="dimmed">No slots available for this date.</Text>
+                ) : (
+                  <ScrollArea.Autosize mah={400}>
+                    <Stack gap="xs">
+                      {slotsForSelectedDate.map((slot) => {
+                        const isSelected = selectedSlot === slot.startTime;
+                        return (
+                          <Card
+                            key={slot.startTime}
+                            withBorder
+                            padding="sm"
+                            onClick={() => {
+                              setSelectedSlot(slot.startTime);
+                              setBookingError(null);
+                            }}
+                            style={{
+                              cursor: 'pointer',
+                              borderColor: isSelected
+                                ? 'var(--mantine-color-blue-filled)'
+                                : undefined,
+                            }}
+                          >
+                            <Group justify="space-between">
+                              <div>
+                                <Text>
+                                  {formatTime(slot.startTime)}
+                                </Text>
+                                <Text size="sm" c="dimmed">
+                                  → {formatTime(slot.endTime)}
+                                </Text>
+                              </div>
+                              {isSelected && (
+                                <Button
+                                  size="xs"
+                                  variant="light"
+                                  color="blue"
+                                >
+                                  Selected
+                                </Button>
+                              )}
+                            </Group>
+                          </Card>
+                        );
+                      })}
+                    </Stack>
+                  </ScrollArea.Autosize>
                 )}
-              </Group>
-            </Card>
-          );
-        })}
-      </Stack>
 
-      {selectedSlot && (
-        <Card withBorder mt="xl" padding="lg">
-          <Title order={4} mb="md">
-            Complete Booking
-          </Title>
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <Stack>
-              <TextInput
-                label="Your Name"
-                placeholder="John Doe"
-                {...register('guestName')}
-                error={errors.guestName?.message}
-              />
-              <TextInput
-                label="Email"
-                placeholder="john@example.com"
-                {...register('guestEmail')}
-                error={errors.guestEmail?.message}
-              />
-              {bookingError && (
-                <Alert color="red" title="Booking failed">
-                  {bookingError}
-                </Alert>
-              )}
-              <Button type="submit" loading={creatingBooking}>
-                Confirm Booking
-              </Button>
-            </Stack>
-          </form>
-        </Card>
-      )}
+                <Divider my="md" />
+
+                {selectedSlot ? (
+                  <form onSubmit={handleSubmit(onSubmit)}>
+                    <Stack>
+                      <TextInput
+                        label="Your Name"
+                        placeholder="John Doe"
+                        {...register('guestName')}
+                        error={errors.guestName?.message}
+                      />
+                      <TextInput
+                        label="Email"
+                        placeholder="john@example.com"
+                        {...register('guestEmail')}
+                        error={errors.guestEmail?.message}
+                      />
+                      {bookingError && (
+                        <Alert color="red" title="Booking failed">
+                          {bookingError}
+                        </Alert>
+                      )}
+                      <Button type="submit" loading={creatingBooking}>
+                        Confirm Booking
+                      </Button>
+                    </Stack>
+                  </form>
+                ) : (
+                  <Text c="dimmed" ta="center">
+                    Select a time slot to continue
+                  </Text>
+                )}
+              </>
+            )}
+          </Card>
+        </Grid.Col>
+      </Grid>
 
       <Modal
         opened={opened}
