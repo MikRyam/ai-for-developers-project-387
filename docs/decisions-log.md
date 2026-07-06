@@ -169,7 +169,7 @@ backend/
 
 ---
 
-## 5. E2E-тесты, CI, Conventional Commits, release-please (шаг завершён, ожидает мёрджа)
+## 5. E2E-тесты, CI, Conventional Commits, release-please (шаг завершён, смёржен в main, релиз v1.1.0)
 
 ### E2E-тесты (`e2e/` — отдельный пакет)
 
@@ -222,6 +222,13 @@ backend/
 - **Merge-стратегия:** squash merge. Заголовок PR = сообщение коммита в main.
 - **Агент всегда предлагает заголовок PR** в конце задачи — пользователь копирует его при создании PR на GitHub
 
+**Проблемы, найденные после первого мёрджа (важно для будущих шагов):**
+
+1. **`package-lock.json` рассинхронизирован с `package.json`** — после добавления husky/commitlint в корневой `package.json` вручную, `package-lock.json` не был пересобран. `npm ci` в CI падает с `EUSAGE`/"Missing: ... from lock file". Решение: всегда `npm install` (не ручная правка) после изменения зависимостей, коммитить обновлённый lock-файл.
+2. **`.release-please-manifest.json` отсутствовал** — `release-please-config.json` без манифеста не работает: release-please не знает текущую версию, от которой считать бамп. Обязательный файл в корне для `release-type: simple`: `{ ".": "1.0.0" }`.
+3. **GitHub Actions по умолчанию не может создавать PR** — `release-please-action` падает с "GitHub Actions is not permitted to create or approve pull requests" пока не включена настройка репозитория: Settings → Actions → General → Workflow permissions → "Allow GitHub Actions to create and approve pull requests". Это настройка репозитория, не код — не сохраняется через git, при создании нового репозитория на курсе нужно будет включить заново.
+4. **PR от release-please требует ручного approve** — GitHub требует подтверждения запуска workflow для PR, открытых не напрямую человеком (в т.ч. через `release-please-action`). Нормально, подтверждается в интерфейсе Actions разово на PR.
+
 ---
 
 ## 6. Что дальше (по программе курса)
@@ -229,3 +236,46 @@ backend/
 Судя по структуре пройденных шагов, вероятные следующие шаги:
 
 - Подготовка к деплою (Docker-образ — требование было заявлено в самом начале курса: "приложение должно собираться в Docker-образ и запускаться в контейнере")
+
+---
+
+## 7. Деплой (шаг завершён, смёржен в main)
+
+**Платформа:** [Render](https://render.com) (PaaS), Web Service с runtime Docker
+
+**Публичный URL:** [booking-service-uc8t.onrender.com](https://booking-service-uc8t.onrender.com)
+
+**Параметры деплоя:**
+- **Runtime:** Docker (автоопределение Dockerfile в корне репозитория)
+- **Регион:** Frankfurt (EU)
+- **План:** Free
+- **Ветка:** `feature/docker-deploy`
+- **Auto-deploy:** включён (деплой при пуше в ветку)
+
+**Архитектура Docker-образа (multi-stage):**
+
+```
+Stage 1 (frontend-build): node:22-alpine
+  npm ci → vite build → frontend/dist
+Stage 2 (backend-build):  node:22-alpine
+  npm ci → tsc → backend/dist
+Stage 3 (production):     node:22-alpine
+  ENV NODE_ENV=production
+  npm ci --omit=dev (только production-зависимости)
+  backend/dist + frontend/dist → public/
+  CMD ["node", "server.js"]
+```
+
+**Ключевые адаптации для продакшена:**
+- Бэкенд (Fastify) раздаёт статику фронтенда через `@fastify/static` + SPA-fallback (`setNotFoundHandler` → `index.html` для всех не-API GET-запросов)
+- RTK Query использует `import.meta.env.PROD ? '' : import.meta.env.VITE_API_BASE_URL` — в проде `baseUrl = ''` (относительные пути на том же origin), в dev — `/api` (Vite proxy → `localhost:3000`)
+- CORS регистрируется только при `NODE_ENV !== 'production'` (в проде фронт и бэк на одном origin)
+- Render автоматически передаёт `PORT` — бэкенд слушает `process.env.PORT` (fallback 3000 для локального запуска)
+- `ENV NODE_ENV=production` в финальной стадии Dockerfile активирует production-режим во всех упомянутых проверках
+
+**Проверка деплоя:**
+- `GET /event-types` → 200 `[]`
+- `GET /bookings` → 200 `[]`
+- `GET /` → 200 (SPA index.html)
+- `GET /admin` → 200 (SPA fallback)
+- `POST /event-types` → 201
