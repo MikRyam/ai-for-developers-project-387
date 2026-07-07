@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/MikRyam/ai-for-developers-project-387/compare/v1.1.0...v1.1.1) (2026-07-07)
+
+
+### Bug Fixes
+
+* skip husky commit-msg hook in CI environment ([29b3bf9](https://github.com/MikRyam/ai-for-developers-project-387/commit/29b3bf9962d18afc88b51ba02c9eb0334dd53c6e))
+
 ## [1.1.0](https://github.com/MikRyam/ai-for-developers-project-387/compare/v1.0.0...v1.1.0) (2026-07-07)
 
 
