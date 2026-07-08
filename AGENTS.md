@@ -53,6 +53,9 @@ docker run -e PORT=3000 -p 3000:3000 booking-service
 
 - **Choosing the PR title type**: when a PR combines multiple categories of changes (e.g. tests + CI + tooling), pick the type by the **most significant change** for the project. Adding testing infrastructure, CI pipelines, or release automation is a new capability → `feat:`. Pure test additions with no other changes → `test:`. Pure CI tweaks → `ci:`. The type also determines whether release-please creates a release PR: only `feat:` and `fix:` trigger version bumps. If you want a release after the merge, use `feat:` or `fix:`.
 
+- **PR titles and commit messages must be raw plain text** — never wrap them in markdown code formatting (no backticks, no code fences), even though
+  command examples elsewhere in this document use code blocks.
+
 - **CI enforcement**: CI checks that:
   - All commits in a PR follow Conventional Commits (`.github/workflows/commitlint.yml`)
   - The PR title itself follows Conventional Commits (`.github/workflows/pr-title.yml`) — this is critical because of squash-merge
