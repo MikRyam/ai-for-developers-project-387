@@ -221,7 +221,7 @@ export function EventTypeBookingPage() {
                 </Title>
 
                 {slotsForSelectedDate.length === 0 ? (
-                  <Text c="dimmed">No slots available for this date.</Text>
+                  <Text c="dimmed">No more slots today, please pick another day</Text>
                 ) : (
                   <ScrollArea.Autosize mah={400}>
                     <Stack gap="xs">
