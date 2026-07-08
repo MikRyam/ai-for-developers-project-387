@@ -174,6 +174,7 @@ backend/
 ### E2E-тесты (`e2e/` — отдельный пакет)
 
 **Стек:** TypeScript + Playwright. 19 тестов:
+
 - **API-тесты** (11, без браузера, через `request` fixture): event types CRUD, слоты, бронирования, конфликты, сортировка
 - **UI-тесты** (8, Chromium): полный путь бронирования, календарь, конфликты, админка
 
@@ -197,12 +198,12 @@ backend/
 
 4 workflow:
 
-| Workflow | Файл | Триггер | Что делает |
-|---|---|---|---|
-| E2E Tests | `.github/workflows/e2e.yml` | push/PR в main | Установка deps → Playwright → прогон → artifact при падении |
-| Commit Lint | `.github/workflows/commitlint.yml` | PR | `wagoid/commitlint-github-action` — проверка всех коммитов в ветке |
-| PR Title Check | `.github/workflows/pr-title.yml` | PR: opened/edited/sync | `amannn/action-semantic-pull-request` — проверка заголовка PR |
-| Release Please | `.github/workflows/release-please.yml` | push в main | `release-please-action` → создаёт release PR с CHANGELOG |
+| Workflow       | Файл                                   | Триггер                | Что делает                                                         |
+| -------------- | -------------------------------------- | ---------------------- | ------------------------------------------------------------------ |
+| E2E Tests      | `.github/workflows/e2e.yml`            | push/PR в main         | Установка deps → Playwright → прогон → artifact при падении        |
+| Commit Lint    | `.github/workflows/commitlint.yml`     | PR                     | `wagoid/commitlint-github-action` — проверка всех коммитов в ветке |
+| PR Title Check | `.github/workflows/pr-title.yml`       | PR: opened/edited/sync | `amannn/action-semantic-pull-request` — проверка заголовка PR      |
+| Release Please | `.github/workflows/release-please.yml` | push в main            | `release-please-action` → создаёт release PR с CHANGELOG           |
 
 ### Conventional Commits
 
@@ -246,6 +247,7 @@ backend/
 **Публичный URL:** [booking-service-uc8t.onrender.com](https://booking-service-uc8t.onrender.com)
 
 **Параметры деплоя:**
+
 - **Runtime:** Docker (автоопределение Dockerfile в корне репозитория)
 - **Регион:** Frankfurt (EU)
 - **План:** Free
@@ -267,6 +269,7 @@ Stage 3 (production):     node:22-alpine
 ```
 
 **Ключевые адаптации для продакшена:**
+
 - Бэкенд (Fastify) раздаёт статику фронтенда через `@fastify/static` + SPA-fallback (`setNotFoundHandler` → `index.html` для всех не-API GET-запросов)
 - RTK Query использует `import.meta.env.PROD ? '' : import.meta.env.VITE_API_BASE_URL` — в проде `baseUrl = ''` (относительные пути на том же origin), в dev — `/api` (Vite proxy → `localhost:3000`)
 - CORS регистрируется только при `NODE_ENV !== 'production'` (в проде фронт и бэк на одном origin)
@@ -274,8 +277,53 @@ Stage 3 (production):     node:22-alpine
 - `ENV NODE_ENV=production` в финальной стадии Dockerfile активирует production-режим во всех упомянутых проверках
 
 **Проверка деплоя:**
+
 - `GET /event-types` → 200 `[]`
 - `GET /bookings` → 200 `[]`
 - `GET /` → 200 (SPA index.html)
 - `GET /admin` → 200 (SPA fallback)
 - `POST /event-types` → 201
+
+## 8. Triage через OpenCode агента (шаг завершён, смёржен в main)
+
+**Цель шага:** проверить, как агент справляется с неидеально описанной проблемой — от расплывчатой жалобы пользователя до рабочей технической
+постановки и фикса.
+
+### Исходный issue (намеренно расплывчатый)
+
+> Захожу забронировать встречу вечером — календарь показывает, что сегодня рабочий день, но список доступных слотов почему-то пустой. Вчера в это же время всё было нормально. Ошибок в консоли браузера не видно. Не могу понять, баг это или так и должно быть.
+
+Без указания часового пояса, дня недели, времени — намеренно, чтобы проверить, доберётся ли агент до причины сам.
+
+### Разбор агента (`/oc explain`)
+
+Агент верно определил причину без наводящих вопросов, со ссылками на конкретные строки кода:
+
+1. Рабочие часы жёстко закодированы в UTC (`bookingService.ts:38-39`, 09:00–18:00 UTC) — для гостей восточнее UTC (например, UTC+3) окно
+   слотов "закрывается" по местному времени раньше, чем ожидается (18:00 UTC = 21:00 МСК).
+2. Прошедшие слоты текущего дня отбрасываются (`cursorMs > nowMs`, `bookingService.ts:44`).
+3. Эффект "вчера было, сегодня нет" объяснён корректно: 14-дневное окно вперёд захватывает разное число рабочих дней в зависимости от того,
+   на какой день недели приходится текущая дата (выходные исключаются, `bookingService.ts:30-32`).
+
+Разбор оказался точнее, чем изначальная запись в п. 7 этого документа — там эффект был отмечен как факт, без разбора конкретного механизма и
+без объяснения "сегодня-вчера" различия.
+
+### Решение по scope фикса
+
+Агент предложил два варианта: (а) сделать рабочие часы привязанными к часовому поясу/настраиваемыми — архитектурное изменение, пересекается с
+уже запланированными в `roadmap.md` фичами (ручной выбор таймзоны, кастомные рабочие часы по EventType); (б) показывать понятное сообщение
+вместо пустого списка слотов — маленький, безопасный UI-фикс.
+
+Решено ограничить этот цикл вариантом (б), чтобы не задваивать работу с уже запланированными issue. Агенту явно указано через `/oc fix` не трогать
+UTC-логику генерации слотов.
+
+### Технические проблемы по пути (не связаны с самим triage)
+
+- Агент дважды сформировал сообщение коммита/заголовок PR, обёрнутое в markdown-бэктики (`` `fix(ux): ...` ``) — GitHub воспринимает поле
+  заголовка PR и commit message как plain text, из-за чего `commitlint`/`pr-title` не распознавали `type(scope): subject` (`subject-empty`, `type-empty`). Исправлено правкой заголовка PR и `git commit --amend` в ветке PR. Чтобы не повторялось — добавлено явное правило в корневой `AGENTS.md`: PR title и commit message — обязательно raw plain text, без обёртки в code-formatting.
+
+### Итог
+
+Issue прошёл полный цикл `issue → triage (/oc explain) → fix (/oc fix) → PR → review → squash-merge`. PR #5 (`fix(ux): clearer empty-slot message`)
+смёржен, последующий release PR от release-please (`v1.1.2`) тоже смёржен. Из расплывчатой жалобы пользователя получилась точная техническая
+постановка без участия человека на этапе диагностики.
