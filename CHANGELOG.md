@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/MikRyam/ai-for-developers-project-387/compare/v1.1.1...v1.1.2) (2026-07-08)
+
+
+### Bug Fixes
+
+* **ux:** clearer empty-slot message ([#5](https://github.com/MikRyam/ai-for-developers-project-387/issues/5)) ([cbf0973](https://github.com/MikRyam/ai-for-developers-project-387/commit/cbf09733995428c21d6c3130ff7d7058f951f1aa))
+
 ## [1.1.1](https://github.com/MikRyam/ai-for-developers-project-387/compare/v1.1.0...v1.1.1) (2026-07-07)
 
 
