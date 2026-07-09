@@ -41,6 +41,13 @@ model EventTypeCreate {
   durationMinutes: int32;
 }
 
+@doc("Payload to patch an existing event type (all fields optional)")
+model EventTypePatch {
+  title?: string;
+  description?: string;
+  durationMinutes?: int32;
+}
+
 @doc("Payload to create a new booking")
 model BookingCreate {
   eventTypeId: Uuid;

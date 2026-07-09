@@ -54,7 +54,8 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /** @description Partially update an event type */
+        patch: operations["EventTypes_patchEventType"];
         trace?: never;
     };
     "/event-types/{id}/slots": {
@@ -119,6 +120,13 @@ export interface components {
             description: string;
             /** Format: int32 */
             durationMinutes: number;
+        };
+        /** @description Payload to patch an existing event type (all fields optional) */
+        EventTypePatch: {
+            title?: string;
+            description?: string;
+            /** Format: int32 */
+            durationMinutes?: number;
         };
         /** @enum {string} */
         ServiceVersions: "1.0.0";
@@ -250,6 +258,41 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventType"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    EventTypes_patchEventType: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["schemas"]["Uuid"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventTypePatch"];
+            };
+        };
         responses: {
             /** @description The request has succeeded. */
             200: {

@@ -104,3 +104,35 @@ test.describe('GET /event-types/:id/slots', () => {
     expect(await res.json()).toEqual([]);
   });
 });
+
+test.describe('PATCH /event-types/:id', () => {
+  test('partially updates an event type and returns 200', async ({ request }) => {
+    const createRes = await request.post(`${API}/event-types`, {
+      data: { title: 'Original', description: 'Original desc', durationMinutes: 30 },
+    });
+    const created = await createRes.json();
+
+    const patchRes = await request.patch(`${API}/event-types/${created.id}`, {
+      data: { title: 'Updated Title' },
+    });
+    expect(patchRes.status()).toBe(200);
+
+    const data = await patchRes.json();
+    expect(data.id).toBe(created.id);
+    expect(data.title).toBe('Updated Title');
+    expect(data.description).toBe('Original desc');
+    expect(data.durationMinutes).toBe(30);
+  });
+
+  test('returns 404 for non-existing event type', async ({ request }) => {
+    const fakeId = '00000000-0000-0000-0000-000000000000';
+    const res = await request.patch(`${API}/event-types/${fakeId}`, {
+      data: { title: 'New Title' },
+    });
+    expect(res.status()).toBe(404);
+
+    const data = await res.json();
+    expect(data.code).toBe(404);
+    expect(data.message).toBe('Event type not found');
+  });
+});

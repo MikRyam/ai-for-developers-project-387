@@ -3,6 +3,7 @@ import type { components } from '@/api/generated-types';
 
 type EventType = components['schemas']['EventType'];
 type EventTypeCreate = components['schemas']['EventTypeCreate'];
+type EventTypePatch = components['schemas']['EventTypePatch'];
 type Booking = components['schemas']['Booking'];
 type BookingCreate = components['schemas']['BookingCreate'];
 type Slot = components['schemas']['Slot'];
@@ -37,6 +38,18 @@ export const apiSlice = createApi({
       invalidatesTags: ['EventType'],
     }),
 
+    updateEventType: builder.mutation<
+      EventType,
+      { id: string } & EventTypePatch
+    >({
+      query: ({ id, ...body }) => ({
+        url: `/event-types/${id}`,
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: ['EventType'],
+    }),
+
     createBooking: builder.mutation<
       Booking,
       BookingCreate
@@ -64,6 +77,7 @@ export const {
   useGetEventTypeQuery,
   useGetSlotsQuery,
   useCreateEventTypeMutation,
+  useUpdateEventTypeMutation,
   useCreateBookingMutation,
   useGetBookingsQuery,
 } = apiSlice;

@@ -53,4 +53,32 @@ test.describe('Admin pages', () => {
       page.getByRole('heading', { name: 'Upcoming Bookings' }),
     ).toBeVisible({ timeout: 10000 });
   });
+
+  test('edits an existing event type', async ({ page, request }) => {
+    const createRes = await request.post(`${API}/event-types`, {
+      data: { title: 'Before Edit', description: 'Old desc', durationMinutes: 15 },
+    });
+    await createRes.json();
+
+    await page.goto('/admin/event-types');
+    await expect(page.getByText('Before Edit')).toBeVisible();
+
+    const card = page.locator('.mantine-Card-root', { hasText: 'Before Edit' });
+    await card.getByRole('button', { name: 'Edit' }).click();
+
+    await expect(page.getByRole('dialog')).toBeVisible();
+
+    const titleInput = page.getByRole('dialog').getByLabel('Title');
+    await titleInput.clear();
+    await titleInput.fill('After Edit');
+
+    const descInput = page.getByRole('dialog').getByLabel('Description');
+    await descInput.clear();
+    await descInput.fill('Updated desc');
+
+    await page.getByRole('dialog').getByRole('button', { name: 'Save' }).click();
+
+    await expect(page.getByText('After Edit')).toBeVisible();
+    await expect(page.getByText('Updated desc')).toBeVisible();
+  });
 });
