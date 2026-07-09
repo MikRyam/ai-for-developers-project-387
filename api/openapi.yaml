@@ -96,6 +96,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      operationId: EventTypes_patchEventType
+      description: Partially update an event type
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventType'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventTypePatch'
   /event-types/{id}/slots:
     get:
       operationId: EventTypes_getSlots
@@ -209,6 +237,17 @@ components:
           type: integer
           format: int32
       description: Payload to create a new event type
+    EventTypePatch:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        durationMinutes:
+          type: integer
+          format: int32
+      description: Payload to patch an existing event type (all fields optional)
     ServiceVersions:
       type: string
       enum:

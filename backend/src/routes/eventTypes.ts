@@ -54,4 +54,25 @@ export async function eventTypesRoutes(fastify: FastifyInstance): Promise<void> 
     const { id } = request.params as { id: string };
     return generateAvailableSlots(id);
   });
+
+  fastify.patch("/event-types/:id", async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const body = request.body as Record<string, unknown>;
+
+    const existing = store.getEventType(id);
+    if (!existing) {
+      return reply.status(404).send({
+        code: 404,
+        message: "Event type not found",
+      });
+    }
+
+    const patch: Record<string, unknown> = {};
+    if (typeof body.title === "string") patch.title = body.title;
+    if (typeof body.description === "string") patch.description = body.description;
+    if (typeof body.durationMinutes === "number") patch.durationMinutes = body.durationMinutes;
+
+    const updated = store.updateEventType(id, patch as Partial<Pick<typeof existing, "title" | "description" | "durationMinutes">>);
+    return updated;
+  });
 }

@@ -25,6 +25,14 @@ interface EventTypes {
     @body body: ErrorResponse;
   };
 
+  @doc("Partially update an event type")
+  @route("/event-types/{id}")
+  @patch
+  patchEventType(@path id: Uuid, ...EventTypePatch): EventType | {
+    @statusCode _: 404;
+    @body body: ErrorResponse;
+  };
+
   @doc("Get available slots for the next 14 days")
   @route("/event-types/{id}/slots")
   @get

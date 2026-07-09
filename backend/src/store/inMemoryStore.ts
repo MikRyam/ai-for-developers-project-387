@@ -23,6 +23,14 @@ export function getBookings(): Booking[] {
   return Array.from(bookings.values());
 }
 
+export function updateEventType(id: string, patch: Partial<Pick<EventType, "title" | "description" | "durationMinutes">>): EventType | undefined {
+  const existing = eventTypes.get(id);
+  if (!existing) return undefined;
+  const updated = { ...existing, ...patch };
+  eventTypes.set(id, updated);
+  return updated;
+}
+
 export function addBooking(booking: Booking): Booking {
   bookings.set(booking.id, booking);
   return booking;
