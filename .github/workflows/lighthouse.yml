@@ -36,13 +36,16 @@ jobs:
           lhci autorun \
             --collect.url=http://localhost:3000/ \
             --collect.url=http://localhost:3000/admin \
-            --upload.target=temporary-public-storage
+            --upload.target=temporary-public-storage \
+            2>&1 | tee lhci-output.log
 
       - name: Upload report as artifact
         uses: actions/upload-artifact@v4
         with:
           name: lighthouse-report
-          path: .lighthouseci
+          path: |
+            .lighthouseci
+            lhci-output.log
           retention-days: 30
 
       - name: Stop container
@@ -50,22 +53,35 @@ jobs:
         run: docker rm -f booking-service || true
 
       - name: Extract Lighthouse scores
-        id: scores
         run: |
           node -e '
             const fs = require("fs");
-            const manifest = JSON.parse(fs.readFileSync(".lighthouseci/manifest.json"));
-            const links = JSON.parse(fs.readFileSync(".lighthouseci/links.json"));
+            const path = require("path");
+            const dir = ".lighthouseci";
+            const files = fs.readdirSync(dir).filter(f => f.endsWith(".report.json"));
+
+            const byUrl = {};
+            for (const file of files) {
+              const lhr = JSON.parse(fs.readFileSync(path.join(dir, file), "utf8"));
+              (byUrl[lhr.finalUrl] ??= []).push(lhr.categories);
+            }
+
+            const log = fs.readFileSync("lhci-output.log", "utf8");
+            const links = [...log.matchAll(/Open the report at (\S+)/g)].map(m => m[1]);
+
             let body = "## Nightly Lighthouse Report\n\n";
-            for (const run of manifest) {
-              const cats = run.summary;
-              body += `### ${run.url}\n`;
-              for (const [key, val] of Object.entries(cats)) {
-                const pct = Math.round(val * 100);
-                const flag = pct < 90 ? " ⚠️" : "";
-                body += `- ${key}: ${pct}${flag}\n`;
+            for (const [url, runs] of Object.entries(byUrl)) {
+              body += `### ${url}\n`;
+              for (const key of Object.keys(runs[0])) {
+                const avg = runs.reduce((sum, r) => sum + r[key].score, 0) / runs.length;
+                const pct = Math.round(avg * 100);
+                body += `- ${runs[0][key].title}: ${pct}${pct < 90 ? " ⚠️" : ""}\n`;
               }
-              body += `- [Full report](${links[run.url]})\n\n`;
+              body += "\n";
+            }
+            if (links.length) {
+              body += "**Полные HTML-отчёты (ссылка живёт ~7 дней):**\n";
+              links.forEach(l => body += `- ${l}\n`);
             }
             fs.writeFileSync("summary.md", body);
           '
