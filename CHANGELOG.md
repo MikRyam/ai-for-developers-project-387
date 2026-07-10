@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.7](https://github.com/MikRyam/ai-for-developers-project-387/compare/v1.1.6...v1.1.7) (2026-07-10)
+
+
+### Bug Fixes
+
+* validate durationMinutes &gt;= 1 on PATCH and add e2e tests ([#17](https://github.com/MikRyam/ai-for-developers-project-387/issues/17)) ([348d853](https://github.com/MikRyam/ai-for-developers-project-387/commit/348d8536d5c70aeb1a63cb22d407c9e05d73068d))
+
 ## [1.1.6](https://github.com/MikRyam/ai-for-developers-project-387/compare/v1.1.5...v1.1.6) (2026-07-10)
 
 
