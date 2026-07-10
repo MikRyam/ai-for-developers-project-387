@@ -6,10 +6,8 @@ on:
   workflow_dispatch: {}     # ручной запуск из вкладки Actions
 
 permissions:
-  contents: write
+  contents: read
   issues: write
-  pull-requests: write
-  id-token: write
 
 jobs:
   lighthouse:
@@ -51,20 +49,32 @@ jobs:
         if: always()
         run: docker rm -f booking-service || true
 
-      - name: Summarize report with OpenCode
-        uses: anomalyco/opencode/github@latest
+      - name: Extract Lighthouse scores
+        id: scores
+        run: |
+          node -e '
+            const fs = require("fs");
+            const manifest = JSON.parse(fs.readFileSync(".lighthouseci/manifest.json"));
+            const links = JSON.parse(fs.readFileSync(".lighthouseci/links.json"));
+            let body = "## Nightly Lighthouse Report\n\n";
+            for (const run of manifest) {
+              const cats = run.summary;
+              body += `### ${run.url}\n`;
+              for (const [key, val] of Object.entries(cats)) {
+                const pct = Math.round(val * 100);
+                const flag = pct < 90 ? " ⚠️" : "";
+                body += `- ${key}: ${pct}${flag}\n`;
+              }
+              body += `- [Full report](${links[run.url]})\n\n`;
+            }
+            fs.writeFileSync("summary.md", body);
+          '
+
+      - name: Create report issue
         env:
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-        with:
-          model: deepseek/deepseek-v4-pro
-          prompt: |
-            Read the Lighthouse report at .lighthouseci/manifest.json and
-            .lighthouseci/links.json (produced by lhci autorun in a previous
-            step in this same job). Summarize Performance / Accessibility /
-            Best Practices / SEO scores for each checked URL. Flag any score
-            below 90. If you can find a previous issue titled "Nightly
-            Lighthouse Report", compare against it and note regressions.
-            Open a new GitHub issue titled "Nightly Lighthouse Report —
-            <today's date>" with the summary and the temporary-public-storage
-            report links from links.json. Keep it short if all scores are
-            fine. Use Conventional Commits format for any commits you make.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "Nightly Lighthouse Report — $(date -u +%Y-%m-%d)" \
+            --body-file summary.md \
+            --repo ${{ github.repository }}
