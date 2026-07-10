@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.8](https://github.com/MikRyam/ai-for-developers-project-387/compare/v1.1.7...v1.1.8) (2026-07-10)
+
+
+### Bug Fixes
+
+* improve color contrast for header navigation links ([#20](https://github.com/MikRyam/ai-for-developers-project-387/issues/20)) ([3e9db14](https://github.com/MikRyam/ai-for-developers-project-387/commit/3e9db14f4378d6328e737e02e401a7f13f56a423))
+
 ## [1.1.7](https://github.com/MikRyam/ai-for-developers-project-387/compare/v1.1.6...v1.1.7) (2026-07-10)
 
 
