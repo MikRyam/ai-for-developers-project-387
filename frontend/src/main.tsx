@@ -15,8 +15,12 @@ const cssVariablesResolver: CSSVariablesResolver = (mantineTheme) => ({
   variables: {
     '--mantine-color-dimmed': mantineTheme.colors.gray[7],
   },
-  light: {},
-  dark: {},
+  light: {
+    '--mantine-color-dimmed': mantineTheme.colors.gray[7],
+  },
+  dark: {
+    '--mantine-color-dimmed': mantineTheme.colors.gray[7],
+  },
 });
 
 createRoot(document.getElementById('root')!).render(
