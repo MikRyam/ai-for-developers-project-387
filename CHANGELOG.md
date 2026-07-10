@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.6](https://github.com/MikRyam/ai-for-developers-project-387/compare/v1.1.5...v1.1.6) (2026-07-10)
+
+
+### Bug Fixes
+
+* serve valid robots.txt instead of SPA fallback HTML ([#14](https://github.com/MikRyam/ai-for-developers-project-387/issues/14)) ([50bc88d](https://github.com/MikRyam/ai-for-developers-project-387/commit/50bc88dcdcce90f38dac54c36b7ba7c04ca266df))
+
 ## [1.1.5](https://github.com/MikRyam/ai-for-developers-project-387/compare/v1.1.4...v1.1.5) (2026-07-10)
 
 
