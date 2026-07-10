@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.10](https://github.com/MikRyam/ai-for-developers-project-387/compare/v1.1.9...v1.1.10) (2026-07-10)
+
+
+### Bug Fixes
+
+* add dimmed color override to light/dark CSS variable scopes ([#29](https://github.com/MikRyam/ai-for-developers-project-387/issues/29)) ([03e67f5](https://github.com/MikRyam/ai-for-developers-project-387/commit/03e67f53107fe84549055f9e2681c7e715c0390d))
+
 ## [1.1.9](https://github.com/MikRyam/ai-for-developers-project-387/compare/v1.1.8...v1.1.9) (2026-07-10)
 
 
