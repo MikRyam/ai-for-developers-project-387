@@ -13,10 +13,10 @@ export function AppLayout() {
             <Title order={3}>Booking Service</Title>
           </Anchor>
           <Group>
-            <Anchor component={Link} to="/admin">
+            <Anchor component={Link} to="/admin" c="dark">
               Bookings
             </Anchor>
-            <Anchor component={Link} to="/admin/event-types">
+            <Anchor component={Link} to="/admin/event-types" c="dark">
               Event Types
             </Anchor>
           </Group>
