@@ -58,7 +58,7 @@ jobs:
             const fs = require("fs");
             const path = require("path");
             const dir = ".lighthouseci";
-            const files = fs.readdirSync(dir).filter(f => f.endsWith(".report.json"));
+            const files = fs.readdirSync(dir).filter(f => f.startsWith("lhr-") && f.endsWith(".json"));
 
             const byUrl = {};
             for (const file of files) {
