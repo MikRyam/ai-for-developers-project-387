@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.5](https://github.com/MikRyam/ai-for-developers-project-387/compare/v1.1.4...v1.1.5) (2026-07-10)
+
+
+### Bug Fixes
+
+* match actual lhci report filename pattern (lhr-*.json) ([b3afdfc](https://github.com/MikRyam/ai-for-developers-project-387/commit/b3afdfc27c6395b8ca655de218225f0e246ca678))
+
 ## [1.1.4](https://github.com/MikRyam/ai-for-developers-project-387/compare/v1.1.3...v1.1.4) (2026-07-10)
 
 
