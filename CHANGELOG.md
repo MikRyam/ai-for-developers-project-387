@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.9](https://github.com/MikRyam/ai-for-developers-project-387/compare/v1.1.8...v1.1.9) (2026-07-10)
+
+
+### Bug Fixes
+
+* overrode dimmed color to gray-7 for WCAG AA ([#24](https://github.com/MikRyam/ai-for-developers-project-387/issues/24)) ([9e6158f](https://github.com/MikRyam/ai-for-developers-project-387/commit/9e6158fb721776670db013a02a43e6b9edff7769))
+
 ## [1.1.8](https://github.com/MikRyam/ai-for-developers-project-387/compare/v1.1.7...v1.1.8) (2026-07-10)
 
 
