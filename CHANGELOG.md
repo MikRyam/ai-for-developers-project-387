@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.4](https://github.com/MikRyam/ai-for-developers-project-387/compare/v1.1.3...v1.1.4) (2026-07-10)
+
+
+### Bug Fixes
+
+* read Lighthouse scores from local report files, not nonexistent manifest ([e6e3d3f](https://github.com/MikRyam/ai-for-developers-project-387/commit/e6e3d3fb22a89319beadfb3415371fe4686ddae3))
+
 ## [1.1.3](https://github.com/MikRyam/ai-for-developers-project-387/compare/v1.1.2...v1.1.3) (2026-07-09)
 
 
