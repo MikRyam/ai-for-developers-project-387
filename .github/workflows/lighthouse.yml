@@ -2,7 +2,7 @@ name: Nightly Lighthouse Check
 
 on:
   schedule:
-    - cron: "0 22 * * *"   # 22:00 UTC = 03:00 по Алматы (UTC+5) — ночью
+    - cron: "0 22 * * 0"   # воскресенье 22:00 UTC = 03:00 понедельника по Алматы
   workflow_dispatch: {}     # ручной запуск из вкладки Actions
 
 permissions:
@@ -85,6 +85,18 @@ jobs:
             }
             fs.writeFileSync("summary.md", body);
           '
+
+      - name: Close previous nightly reports
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue list --repo ${{ github.repository }} \
+            --search "Nightly Lighthouse Report in:title" \
+            --state open --json number --jq '.[].number' | \
+          while read -r num; do
+            gh issue close "$num" --repo ${{ github.repository }} \
+              --comment "Superseded by the next nightly Lighthouse run."
+          done
 
       - name: Create report issue
         env:
